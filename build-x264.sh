@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# M1+2023年使用说明
+# 1. 先安装nasm（brew install nasm）
+# 2. M1电脑使用前，加上"arch -x86_64"再运行脚本，即：arch -x86_64 ./build-x264.sh
+
 CONFIGURE_FLAGS="--enable-static --enable-pic --disable-cli"
 
 ARCHS="arm64 x86_64 i386 armv7 armv7s"
@@ -51,7 +55,7 @@ then
 		    	CFLAGS="$CFLAGS -mios-simulator-version-min=7.0"
 		    	HOST=
 		    else
-		    	CFLAGS="$CFLAGS -mios-simulator-version-min=5.0"
+		    	CFLAGS="$CFLAGS -mios-simulator-version-min=7.0"
 			HOST="--host=i386-apple-darwin"
 		    fi
 		else
@@ -87,24 +91,24 @@ then
 		    --extra-ldflags="$LDFLAGS" \
 		    --prefix="$THIN/$ARCH" || exit 1
 
-		make -j3 install || exit 1
+		make -j$(sysctl -n hw.ncpu) install || exit 1
 		cd $CWD
 	done
 fi
 
 if [ "$LIPO" ]
 then
-	echo "building fat binaries..."
-	mkdir -p $FAT/lib
-	set - $ARCHS
-	CWD=`pwd`
-	cd $THIN/$1/lib
-	for LIB in *.a
-	do
-		cd $CWD
-		lipo -create `find $THIN -name $LIB` -output $FAT/lib/$LIB
-	done
+    echo "building fat binaries..."
+    mkdir -p $FAT/lib
+    set - $ARCHS
+    CWD=`pwd`
+    cd $THIN/$1/lib
+    for LIB in *.a
+    do
+        cd $CWD
+        lipo -create `find $THIN -name $LIB` -output $FAT/lib/$LIB
+    done
 
-	cd $CWD
-	cp -rf $THIN/$1/include $FAT
+    cd $CWD
+    cp -rf $THIN/$1/include $FAT
 fi
